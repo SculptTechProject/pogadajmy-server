@@ -6,6 +6,7 @@ using Npgsql;
 using pogadajmy_server.Infrastructure;
 using pogadajmy_server.Services.Chat;
 using pogadajmy_server.Services.TokenService;
+using StackExchange.Redis;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -150,10 +151,13 @@ public class Program
         builder.Services.AddSignalR().AddStackExchangeRedis("redis:6379");
         
         var redisCfg = Environment.GetEnvironmentVariable("Redis__Configuration") ?? "redis:6379";
-        builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(
-            _ => StackExchange.Redis.ConnectionMultiplexer.Connect(redisCfg));
-        
-        builder.Services.AddSignalR(o => { o.EnableDetailedErrors = true; }).AddJsonProtocol();
+
+        builder.Services.AddSingleton<IConnectionMultiplexer>(
+            _ => ConnectionMultiplexer.Connect(redisCfg));
+
+        builder.Services.AddSignalR()
+            .AddJsonProtocol(o => o.PayloadSerializerOptions.PropertyNamingPolicy = null)
+            .AddStackExchangeRedis(redisCfg);
 
         
         
