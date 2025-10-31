@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using pogadajmy_server.Infrastructure;
+using pogadajmy_server.Models;
 using pogadajmy_server.Utils;
 using StackExchange.Redis;
 
@@ -13,10 +15,12 @@ namespace pogadajmy_server.Services.Chat
     public sealed class ChatHub : Hub
     {
         private readonly IConnectionMultiplexer _redis;
+        private readonly AppDbContext _db;
         private static string ConnKey(string connId) => $"conn:{connId}";
-        public ChatHub(IConnectionMultiplexer redis /*, inne zależności */)
+        public ChatHub(IConnectionMultiplexer redis, AppDbContext db)
         {
             _redis = redis;
+            _db = db;
         }
 
         private Guid UserId() => Context.User!.GetSubGuid();
@@ -100,14 +104,35 @@ namespace pogadajmy_server.Services.Chat
 
         public async Task SendMessage(string roomId, string text)
         {
-            if (!Guid.TryParse(roomId, out _))
+            if (!Guid.TryParse(roomId, out var rid))
                 throw new HubException("invalid_room_id");
 
             var msg = text?.Trim();
             if (string.IsNullOrEmpty(msg)) return;
 
             var userId = GetUserIdOrThrow();
-            await Clients.Group(roomId).SendAsync("Message", new { userId, text = msg, at = DateTime.UtcNow });
+            
+            var isMember = await _db.RoomMembers
+                .AsNoTracking()
+                .AnyAsync(m => m.RoomId == rid && m.UserId == userId);
+            if (!isMember) throw new HubException("not_a_member");
+            
+            var entity = new Message {
+                Id = Guid.NewGuid(),
+                RoomId = rid,
+                UserId = userId,
+                Text = msg,
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.Messages.Add(entity);
+            await _db.SaveChangesAsync();
+            
+            await Clients.Group(roomId).SendAsync("Message", new {
+                id = entity.Id,
+                userId,
+                text = msg,
+                createdAt = entity.CreatedAt
+            });
         }
 
         public override Task OnConnectedAsync()

@@ -56,21 +56,42 @@ namespace pogadajmy_server.Controllers
             return NoContent();
         }
         
-        [Authorize]
         [HttpGet("{id:guid}/messages")]
-        public async Task<IActionResult> History(Guid id, int take = 50, DateTime? before = null)
+        [ProducesResponseType(typeof(IEnumerable<MessageDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMessages(
+            [FromRoute] Guid id,
+            [FromQuery] int take = 50,
+            [FromQuery] DateTime? before = null)
         {
-            var uid = User.GetSubGuid();
-            var isMember = await _db.RoomMembers.FindAsync(id, uid) is not null;
+            take = Math.Clamp(take, 1, 200);
+            
+            var userId = User.GetSubGuid();
+            var isMember = await _db.RoomMembers
+                .AsNoTracking()
+                .AnyAsync(m => m.RoomId == id && m.UserId == userId);
             if (!isMember) return Forbid();
 
-            var q = _db.Messages.AsNoTracking().Where(m => m.RoomId == id);
-            if (before.HasValue) q = q.Where(m => m.CreatedAt < before.Value);
+            var q = _db.Messages.AsNoTracking()
+                .Where(m => m.RoomId == id);
 
-            var items = await q.OrderByDescending(m => m.CreatedAt)
-                .Take(Math.Clamp(take, 1, 200))
+            if (before.HasValue)
+                q = q.Where(m => m.CreatedAt < before.Value);
+            
+            var items = await q
+                .OrderByDescending(m => m.CreatedAt)
+                .Take(take)
+                .Select(m => new MessageDto
+                {
+                    Id = m.Id,
+                    UserId = m.UserId,
+                    Text = m.Text,
+                    CreatedAt = m.CreatedAt
+                })
                 .ToListAsync();
-            return Ok(items.OrderBy(m => m.CreatedAt)); // zwracaj rosnąco
+            
+            items.Reverse();
+
+            return Ok(items);
         }
         
         [Authorize]
