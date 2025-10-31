@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using pogadajmy_server.Infrastructure;
@@ -11,9 +12,11 @@ using pogadajmy_server.Infrastructure;
 namespace pogadajmy_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251031201606_Init_chat")]
+    partial class Init_chat
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,25 +25,6 @@ namespace pogadajmy_server.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("pogadajmy_server.Models.DmRoom", b =>
-                {
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserA")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserB")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("RoomId");
-
-                    b.HasIndex("UserA", "UserB")
-                        .IsUnique();
-
-                    b.ToTable("dm_rooms", (string)null);
-                });
-
             modelBuilder.Entity("pogadajmy_server.Models.Message", b =>
                 {
                     b.Property<Guid>("Id")
@@ -48,9 +32,7 @@ namespace pogadajmy_server.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
@@ -65,11 +47,9 @@ namespace pogadajmy_server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
                     b.HasIndex("RoomId", "CreatedAt");
 
-                    b.ToTable("messages", (string)null);
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("pogadajmy_server.Models.Room", b =>
@@ -79,9 +59,7 @@ namespace pogadajmy_server.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsPrivate")
                         .HasColumnType("boolean");
@@ -99,7 +77,7 @@ namespace pogadajmy_server.Migrations
 
                     b.HasIndex("CreatedAt");
 
-                    b.ToTable("rooms", (string)null);
+                    b.ToTable("Rooms");
                 });
 
             modelBuilder.Entity("pogadajmy_server.Models.RoomMember", b =>
@@ -111,17 +89,13 @@ namespace pogadajmy_server.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("JoinedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("RoomId", "UserId");
 
                     b.HasIndex("JoinedAt");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("room_members", (string)null);
+                    b.ToTable("RoomMembers");
                 });
 
             modelBuilder.Entity("pogadajmy_server.Models.User", b =>
@@ -154,67 +128,26 @@ namespace pogadajmy_server.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("pogadajmy_server.Models.DmRoom", b =>
-                {
-                    b.HasOne("pogadajmy_server.Models.Room", "Room")
-                        .WithOne()
-                        .HasForeignKey("pogadajmy_server.Models.DmRoom", "RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Room");
-                });
-
             modelBuilder.Entity("pogadajmy_server.Models.Message", b =>
                 {
                     b.HasOne("pogadajmy_server.Models.Room", "Room")
-                        .WithMany("Messages")
+                        .WithMany()
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("pogadajmy_server.Models.User", "User")
-                        .WithMany("Messages")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Room");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("pogadajmy_server.Models.RoomMember", b =>
                 {
                     b.HasOne("pogadajmy_server.Models.Room", "Room")
-                        .WithMany("Members")
+                        .WithMany()
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("pogadajmy_server.Models.User", "User")
-                        .WithMany("Memberships")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Room");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("pogadajmy_server.Models.Room", b =>
-                {
-                    b.Navigation("Members");
-
-                    b.Navigation("Messages");
-                });
-
-            modelBuilder.Entity("pogadajmy_server.Models.User", b =>
-                {
-                    b.Navigation("Memberships");
-
-                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

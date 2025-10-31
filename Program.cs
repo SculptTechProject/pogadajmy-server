@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using Npgsql;
 using pogadajmy_server.Infrastructure;
+using pogadajmy_server.Services.Chat;
+using pogadajmy_server.Services.TokenService;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -24,12 +25,26 @@ public class Program
         }
         var jwtIssuer   = Environment.GetEnvironmentVariable("POGADAJMY_JWT_ISSUER") ?? "pogadajmy";
         var jwtAudience = Environment.GetEnvironmentVariable("POGADAJMY_JWT_AUDIENCE") ?? "pogadajmy-api";
-
+        
+        // cors
+        builder.Services.AddCors(o => o.AddPolicy("front", p =>
+            p.WithOrigins(
+                    "http://127.0.0.1:5500",
+                    "http://localhost:5500"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()
+        ));
 
         // Add services to the container.
         builder.Services.AddControllers();
         builder.Services.AddHealthChecks();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddScoped<ITokenService, TokenService>();
+        builder.Services.AddSingleton<IChatPersistence, InMemoryChatPersistence>();
+        builder.Services.AddHostedService(sp => (InMemoryChatPersistence)sp.GetRequiredService<IChatPersistence>());
+        builder.Services.AddSignalR().AddJsonProtocol();
         
         // AuthN/AuthZ
         builder.Services
@@ -45,6 +60,19 @@ public class Program
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
+                };
+                o.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = ctx =>
+                    {
+                        var accessToken = ctx.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            ctx.HttpContext.Request.Path.StartsWithSegments("/hubs/chat"))
+                        {
+                            ctx.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
                 };
             });
         
@@ -114,7 +142,25 @@ public class Program
                 Version = "v1"
             });
         });
+        
+        // socketio
+        builder.Services.AddSignalR()
+            .AddJsonProtocol(o => { o.PayloadSerializerOptions.PropertyNamingPolicy = null; });
+        
+        builder.Services.AddSignalR().AddStackExchangeRedis("redis:6379");
+        
+        var redisCfg = Environment.GetEnvironmentVariable("Redis__Configuration") ?? "redis:6379";
+        builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(
+            _ => StackExchange.Redis.ConnectionMultiplexer.Connect(redisCfg));
+        
+        builder.Services.AddSignalR(o => { o.EnableDetailedErrors = true; }).AddJsonProtocol();
 
+        
+        
+        // --- END ENV / config --- 
+        
+        
+        
         var app = builder.Build();
         
         // Auto-migrate db
@@ -127,6 +173,7 @@ public class Program
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
+            app.UseHttpsRedirection();
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -136,15 +183,20 @@ public class Program
         }
 
         // app.UseHttpsRedirection(); // PROD: true za SSL/ingress 
+        app.UseCors("front");
 
         app.UseAuthentication(); 
         app.UseAuthorization();
 
         app.MapControllers();
         
+        
         app.MapHealthChecks("/health");
         app.MapGet("/dbhealth", (AppDbContext db) => db.Database.CanConnectAsync());
-
+        app.MapHub<ChatHub>("/hubs/chat");
+        
+        app.MapControllers().RequireCors("front");
+        
         app.Run();
     }
 }

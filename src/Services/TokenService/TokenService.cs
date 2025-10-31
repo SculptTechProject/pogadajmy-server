@@ -15,9 +15,10 @@ namespace pogadajmy_server.Services.TokenService
         
         public TokenService(IConfiguration configuration)
         {
-            _key    = Environment.GetEnvironmentVariable("TRILY_JWT_KEY")!;
-            _issuer = Environment.GetEnvironmentVariable("TRILY_JWT_ISSUER") ?? "trily";
-            _aud    = Environment.GetEnvironmentVariable("TRILY_JWT_AUDIENCE") ?? "trily-api";
+            _key    = Environment.GetEnvironmentVariable("POGADAJMY_JWT_KEY")! 
+                      ?? throw new InvalidOperationException("POGADAJMY_JWT_KEY is not set.");
+            _issuer = Environment.GetEnvironmentVariable("POGADAJMY_JWT_ISSUER") ?? "pogadajmy";
+            _aud    = Environment.GetEnvironmentVariable("POGADAJMY_JWT_AUDIENCE") ?? "pogadajmy-api";
         }
 
         public string CreateAccessToken(User u, TimeSpan lifetime)

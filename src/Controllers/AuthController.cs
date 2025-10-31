@@ -7,6 +7,7 @@ using pogadajmy_server.Infrastructure;
 using pogadajmy_server.Models;
 using pogadajmy_server.Services.TokenService;
 using System.Security.Claims;
+using LoginRequest = pogadajmy_server.Dto.LoginRequest;
 using RegisterRequest = pogadajmy_server.Dto.RegisterRequest;
 
 namespace pogadajmy_server.Controllers
@@ -23,7 +24,8 @@ namespace pogadajmy_server.Controllers
             _db = db;
             _tokens = tokens;
         }
-
+        
+        [AllowAnonymous]
         [HttpPost("register")]
         [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -64,37 +66,39 @@ namespace pogadajmy_server.Controllers
             return Created("User created successfully.", new { newUser.Id, newUser.Name });
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] LoginRequest body)
         {
-            var name = body.Email.Trim().ToLowerInvariant();
+            if (body is null || string.IsNullOrWhiteSpace(body.Name) || string.IsNullOrWhiteSpace(body.Password))
+                return Unauthorized(Problem("Invalid credentials", 401, "Name or password is incorrect."));
 
+            // case-insensitive po stronie Postgresa
             var user = await _db.User
                 .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Name.ToLower() == name);
+                .FirstOrDefaultAsync(u => EF.Functions.ILike(u.Name, body.Name));
 
             if (user is null || !BCrypt.Net.BCrypt.Verify(body.Password, user.PasswordHash))
-            {
-                return Unauthorized(new ProblemDetails
-                {
-                    Title = "Invalid credentials",
-                    Detail = "Name or password is incorrect.",
-                    Status = StatusCodes.Status401Unauthorized,
-                    Type = "https://docs.trily.dev/errors/invalid_credentials"
-                });
-            }
+                return Unauthorized(Problem("Invalid credentials", 401, "Name or password is incorrect."));
 
-            var accessToken = _tokens.CreateAccessToken(user, TimeSpan.FromHours(2));
+            var token = _tokens.CreateAccessToken(user, TimeSpan.FromHours(1));
 
             return Ok(new
             {
-                access_token = accessToken,
-                token_type = "Bearer",
-                expires_in = 1800
+                token,
+                user = new { id = user.Id, name = user.Name, city = user.City, pro = user.IsPro }
             });
         }
+
+        private static ProblemDetails Problem(string title, int status, string detail) =>
+            new() {
+                Title = title,
+                Status = status,
+                Detail = detail,
+                Type = "https://docs.pogadajmy.dev/errors/invalid_credentials"
+            };
 
         [HttpGet("me")]
         [Authorize]

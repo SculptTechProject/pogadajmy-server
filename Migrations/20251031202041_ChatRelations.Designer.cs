@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using pogadajmy_server.Infrastructure;
@@ -11,9 +12,11 @@ using pogadajmy_server.Infrastructure;
 namespace pogadajmy_server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251031202041_ChatRelations")]
+    partial class ChatRelations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,25 +24,6 @@ namespace pogadajmy_server.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("pogadajmy_server.Models.DmRoom", b =>
-                {
-                    b.Property<Guid>("RoomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserA")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserB")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("RoomId");
-
-                    b.HasIndex("UserA", "UserB")
-                        .IsUnique();
-
-                    b.ToTable("dm_rooms", (string)null);
-                });
 
             modelBuilder.Entity("pogadajmy_server.Models.Message", b =>
                 {
@@ -111,9 +95,7 @@ namespace pogadajmy_server.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("JoinedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("RoomId", "UserId");
 
@@ -152,17 +134,6 @@ namespace pogadajmy_server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("pogadajmy_server.Models.DmRoom", b =>
-                {
-                    b.HasOne("pogadajmy_server.Models.Room", "Room")
-                        .WithOne()
-                        .HasForeignKey("pogadajmy_server.Models.DmRoom", "RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("pogadajmy_server.Models.Message", b =>
