@@ -1,0 +1,65 @@
+﻿services:
+  api:
+    build: .
+    container_name: app-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      
+      POGADAJMY_JWT_KEY: "3d6d3f218dd49c1a95d0a8e8babd8fdafcc2074e9a75d2e4280ab7b6485aed3e02232352a4dd666c5be42580bc4f96db0f7b4e82622015a4935bbe6989ea3827"
+      POGADAJMY_JWT_ISSUER: "pogadajmy"
+      POGADAJMY_JWT_AUDIENCE: "pogadajmy-api"
+      
+      ConnectionStrings__Default: >
+        Host=postgres;Port=5432;
+        Database=${POSTGRES_DB};
+        Username=${POSTGRES_USER};
+        Password=${POSTGRES_PASSWORD};
+        Pooling=true;Include Error Detail=true
+      
+      Redis__Configuration: redis:6379,abortConnect=false
+    ports:
+      - "8080:8080"
+    volumes:
+      - app_data:/app_data
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: app-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: app-redis
+    command: ["redis-server", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  app_data:
