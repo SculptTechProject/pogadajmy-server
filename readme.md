@@ -54,7 +54,6 @@ Celem projektu jest stworzenie **polskiej alternatywy dla Slacka i Discorda**, z
 
 * Subskrypcje Pro / Business (10–25 zł za użytkownika miesięcznie).
 * Hosting i support firmowy (B2B SaaS, white-label).
-* Prowizje z marketplace integracji.
 * Sprzedaż analityki i insightów dla zespołów (uczciwe telemetry).
 
 #### W skrócie
