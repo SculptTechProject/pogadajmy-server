@@ -1,61 +1,60 @@
-### Geneza projektu "Pogadajmy"
+# Project Genesis: “Pogadajmy”
 
-"Pogadajmy" to projekt stworzony z potrzeby zbudowania nowoczesnej, lekkiej i skalowalnej platformy komunikacyjnej w duchu polskiego Discorda lub Slacka, ale z prostotą i otwartością na społeczności. Jego głównym celem jest umożliwienie ludziom rozmów w czasie rzeczywistym – zarówno w grupach (rooms), jak i prywatnie (DM rooms) – z pełną kontrolą nad danymi i integracją z systemami, które użytkownicy już znają.
+**Pogadajmy** was born from the need to build a modern, lightweight, and scalable communication platform—a Polish take on Discord or Slack, but simpler and friendlier to communities. The core goal is real‑time conversations—both in groups (rooms) and privately (DM rooms)—with full data control and easy integration with systems people already use.
 
-#### Fundament technologiczny
+## Technology foundation
 
-Backend projektu został zbudowany w .NET 9 z wykorzystaniem SignalR (komunikacja WebSocket), PostgreSQL i Redis (cache + presence tracking). Architektura jest modularna: API REST obsługuje rejestrację, autoryzację, zarządzanie pokojami i historię wiadomości, a warstwa SignalR odpowiada za komunikację w czasie rzeczywistym. System korzysta z JWT do autoryzacji oraz stosuje Redis jako backplane do skalowania połączeń między wieloma instancjami serwera.
+The backend is built on .NET 9 using SignalR (WebSocket communication), PostgreSQL, and Redis (cache + presence tracking). The architecture is modular: a REST API handles sign‑up, authorization, room management, and message history, while the SignalR layer powers real‑time communication. JWT is used for auth, and Redis serves as the backplane to scale connections across multiple server instances.
 
-Frontend w obecnej wersji jest testowy (HTML + JS, klient SignalR), ale w docelowej formie powstanie aplikacja webowa (Nuxt lub React) oraz mobilna (React Native / Flutter).
+The current frontend is experimental (HTML + JS, SignalR client), but the target is a production web app (Nuxt or React) and a mobile app (React Native / Flutter).
 
-#### Pomysł i kontekst
+## Idea and context
 
-W przeciwieństwie do korporacyjnych narzędzi jak Teams, Slack czy Discord, Pogadajmy ma być lekki, prywatny i zbudowany z myślą o społecznościach i małych firmach.
-Celem nie jest tylko czat, ale **komunikacyjny ekosystem**, który pozwoli łączyć:
+Unlike corporate tools such as Teams, Slack, or Discord, Pogadajmy aims to be lightweight, private, and built for communities and small businesses. It’s not just a chat—it’s a **communication ecosystem** designed to connect:
 
-* rozmowy w czasie rzeczywistym (SignalR),
-* integracje webhook (Trily-like automation),
-* obecność i aktywność użytkowników (presence, typing),
-* prostą moderację (flagowanie, soft-delete, telemetry, analityka).
+* real‑time conversations (SignalR),
+* webhook integrations (Trily‑like automation),
+* user presence and activity (presence, typing),
+* simple moderation (flagging, soft‑delete, telemetry, analytics).
 
-#### Model biznesowy
+## Business model
 
-1. **Freemium + SaaS dla zespołów**
+1. **Freemium + SaaS for teams**
 
-    * Darmowy plan dla użytkowników indywidualnych lub grup do 10 osób.
-    * Płatny plan (Pro) z dodatkami: historia bez limitu, integracje webhook (GitHub, Notion, Jira), statystyki aktywności, hosting dedykowany.
+   * Free plan for individuals or groups up to 10 members.
+   * Paid (Pro) plan with extras: unlimited history, webhook integrations (GitHub, Notion, Jira), activity stats, dedicated hosting.
 
-2. **White-label / on-premise**
+2. **White‑label / on‑premise**
 
-    * Możliwość uruchomienia własnej instancji Pogadajmy dla firm, szkół czy społeczności.
-    * Model licencyjny lub subskrypcyjny z opłatą za użytkownika / instancję.
+   * Run your own Pogadajmy instance for companies, schools, or communities.
+   * Licensed or subscription model with per‑user / per‑instance pricing.
 
-3. **Marketplace integracji**
+3. **Integration marketplace**
 
-    * W planach jest wprowadzenie integracji społecznościowych (boty, powiadomienia, AI-asystent) i pobieranie prowizji od integracji premium.
+   * Planned community integrations (bots, notifications, AI assistant) with a revenue share on premium integrations.
 
-4. **Dane i telemetryka (etyczny analytics)**
+4. **Data and telemetry (ethical analytics)**
 
-    * System wewnętrznej telemetrii pozwoli tworzyć raporty (np. kto najczęściej pisze, kiedy użytkownicy są aktywni), ale bez komercyjnego śledzenia użytkowników.
+   * Built‑in telemetry for reports (e.g., top posters, peak activity) without commercial tracking of users.
 
-#### Wyróżniki projektu
+## Key differentiators
 
-* Natywne wsparcie SignalR i WebSocket – zero opóźnień.
-* Architektura event-driven z Redis backplane – gotowa pod skalowanie.
-* Prosta konfiguracja, lokalny hosting (Docker-first approach).
-* Open-source mindset z planem na SaaS w przyszłości.
-* Możliwość rozszerzania o komponenty AI (np. moderacja treści, smart replies).
+* Native SignalR and WebSocket support—near‑zero latency.
+* Event‑driven architecture with a Redis backplane—ready to scale.
+* Simple setup, local hosting (Docker‑first approach).
+* Open‑source mindset with a path to SaaS.
+* Extensible with AI components (e.g., content moderation, smart replies).
 
-#### Długofalowy cel
+## Long‑term goal
 
-Celem projektu jest stworzenie **polskiej alternatywy dla Slacka i Discorda**, z przejrzystym modelem monetyzacji i możliwością hostowania własnej instancji. Docelowo ma to być produkt open-core – część open-source (community edition), część komercyjna (enterprise / Pro edition). Wersja open pozwoli społeczności współtworzyć narzędzie, a płatne funkcje (np. AI transcription, monitoring, integracje premium) będą finansować rozwój.
+Create a **Polish alternative to Slack and Discord** with a transparent monetization model and the option to self‑host. The aim is an open‑core product—part open‑source (community edition), part commercial (enterprise / Pro edition). The open version invites community contributions, while paid features (e.g., AI transcription, monitoring, premium integrations) fund ongoing development.
 
-#### Jak zarobić
+## How it makes money
 
-* Subskrypcje Pro / Business (10–25 zł za użytkownika miesięcznie).
-* Hosting i support firmowy (B2B SaaS, white-label).
-* Sprzedaż analityki i insightów dla zespołów (uczciwe telemetry).
+* Pro / Business subscriptions (PLN 10–25 per user per month).
+* Managed hosting and enterprise support (B2B SaaS, white‑label).
+* Selling team analytics and insights (ethical telemetry).
 
-#### W skrócie
+## In short
 
-**Pogadajmy** to skalowalny system czatu z ambicją stania się fundamentem dla komunikacji zespołowej w Polsce i nie tylko. Projekt łączy pasję do technologii realtime (SignalR, Redis, WebSocket) z filozofią prostoty i otwartości – ma pokazać, że nowoczesny komunikator może być lekki, bezpieczny i lokalny.
+**Pogadajmy** is a scalable chat system with the ambition to become the backbone of team communication in Poland and beyond. It blends a love for real‑time tech (SignalR, Redis, WebSocket) with a philosophy of simplicity and openness—showing that a modern communicator can be lightweight, secure, and local.
